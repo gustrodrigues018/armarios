@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>Editar Colaborador - Armários</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    input, button { padding: 10px; margin: 5px; width: 100%; max-width: 400px; }
+    button { cursor: pointer; background-color: #007bff; color: white; border: none; }
+    button:hover { background-color: #0056b3; }
+  </style>
+</head>
+<body>
+
+  <h1>Editar Colaborador</h1>
+
+  <form id="formEditar">
+    <input type="text" id="nome" placeholder="Nome do Colaborador" required />
+    <input type="number" id="numero" placeholder="Número do Armário" required min="1" />
+    <button type="submit">Salvar Alterações</button>
+  </form>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+    import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCfBDyXi9sYCgb0Z_1ApmPk2PcwL5nhXI4",
+      authDomain: "armarios-b3c30.firebaseapp.com",
+      projectId: "armarios-b3c30",
+      storageBucket: "armarios-b3c30.firebasestorage.app",
+      messagingSenderId: "1036955127916",
+      appId: "1:1036955127916:web:de798f7e226a9f58e60849"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    // Pega o parâmetro key da URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const key = urlParams.get('key');
+
+    if (!key) {
+      alert('Nenhum colaborador selecionado para edição!');
+      // Poderia redirecionar para lista aqui
+      throw new Error('Key não fornecida');
+    }
+
+    const nomeInput = document.getElementById('nome');
+    const numeroInput = document.getElementById('numero');
+    const form = document.getElementById('formEditar');
+
+    const colaboradorRef = ref(db, 'armarios/' + key);
+
+    // Busca dados atuais do colaborador
+    onValue(colaboradorRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        nomeInput.value = data.nome;
+        numeroInput.value = data.numero;
+      } else {
+        alert('Colaborador não encontrado!');
+        // Redirecionar ou algo assim
+      }
+    }, { onlyOnce: true });
+
+    // Salvar alterações
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const nome = nomeInput.value.trim();
+      const numero = numeroInput.value.trim();
+
+      if (!nome || !numero) {
+        alert('Preencha todos os campos!');
+        return;
+      }
+
+      try {
+        await update(colaboradorRef, { nome, numero });
+        alert('Colaborador atualizado com sucesso!');
+        // Redirecionar para lista, por exemplo:
+        window.location.href = 'index.html';
+      } catch (error) {
+        console.error('Erro ao atualizar:', error);
+        alert('Erro ao salvar alterações.');
+      }
+    });
+  </script>
+
+</body>
+</html>
