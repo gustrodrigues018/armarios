@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>Controle de Armários</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    input, button { padding: 8px; margin: 5px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background: #007bff; color: white; }
+    button { cursor: pointer; }
+    .btn-edit { background: #ffc107; border: none; }
+    .btn-delete { background: #dc3545; border: none; color: white; }
+  </style>
+</head>
+<body>
+
+<h1>Controle de Armários</h1>
+
+<form id="formArmario">
+  <input type="text" id="nome" placeholder="Nome do Colaborador" required />
+  <input type="number" id="numero" placeholder="Número do Armário" required min="1" />
+  <button type="submit">Adicionar / Atualizar</button>
+</form>
+
+<table id="tabelaArmarios">
+  <thead>
+    <tr>
+      <th>Nome</th>
+      <th>Número do Armário</th>
+      <th>Ações</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+  import { getDatabase, ref, push, onValue, set, remove, update } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
+
+  // Config Firebase - usa o seu mesmo
+  const firebaseConfig = {
+    apiKey: "AIzaSyCfBDyXi9sYCgb0Z_1ApmPk2PcwL5nhXI4",
+    authDomain: "armarios-b3c30.firebaseapp.com",
+    projectId: "armarios-b3c30",
+    storageBucket: "armarios-b3c30.firebasestorage.app",
+    messagingSenderId: "1036955127916",
+    appId: "1:1036955127916:web:de798f7e226a9f58e60849"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const armariosRef = ref(db, 'armarios');
+
+  const form = document.getElementById('formArmario');
+  const nomeInput = document.getElementById('nome');
+  const numeroInput = document.getElementById('numero');
+  const tabelaBody = document.querySelector('#tabelaArmarios tbody');
+
+  let editKey = null;
+
+  // Renderiza os dados da tabela
+  function renderTabela(data) {
+    tabelaBody.innerHTML = '';
+    data.forEach(({ key, val }) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${val.nome}</td>
+        <td>${val.numero}</td>
+        <td>
+          <button class="btn-edit" data-key="${key}">✏️</button>
+          <button class="btn-delete" data-key="${key}">🗑️</button>
+        </td>
+      `;
+      tabelaBody.appendChild(tr);
+    });
+  }
+
+  // Escuta mudanças no DB em tempo real
+  onValue(armariosRef, (snapshot) => {
+    const dados = snapshot.val();
+    if (!dados) {
+      tabelaBody.innerHTML = '<tr><td colspan="3">Sem dados cadastrados.</td></tr>';
+      return;
+    }
+    // Tranforma o objeto em array [{key, val}]
+    const arr = Object.entries(dados).map(([key, val]) => ({ key, val }));
+    renderTabela(arr);
+  });
+
+  // Adicionar ou atualizar
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const nome = nomeInput.value.trim();
+    const numero = numeroInput.value.trim();
+
+    if (!nome || !numero) {
+      alert('Preencha todos os campos!');
+      return;
+    }
+
+    try {
+      if (editKey) {
+        // Atualiza o registro
+        await update(ref(db, 'armarios/' + editKey), { nome, numero });
+        editKey = null;
+        form.querySelector('button').textContent = 'Adicionar / Atualizar';
+      } else {
+        // Verifica se o número já existe
+        const snapshot = await new Promise(resolve => {
+          onValue(armariosRef, snap => resolve(snap), { onlyOnce: true });
+        });
+        const dados = snapshot.val() || {};
+        const existeNumero = Object.values(dados).some(item => item.numero === numero);
+        if (existeNumero) {
+          alert('Número do armário já está atribuído!');
+          return;
+        }
+        await push(armariosRef, { nome, numero });
+      }
+
+      form.reset();
+    } catch (err) {
+      console.error('Erro ao salvar:', err);
+      alert('Erro ao salvar dados. Veja console.');
+    }
+  });
+
+  // Delegação de evento para botões de editar e deletar
+  tabelaBody.addEventListener('click', async (e) => {
+    if (e.target.classList.contains('btn-edit')) {
+      const key = e.target.dataset.key;
+      const snapshot = await new Promise(resolve => {
+        onValue(ref(db, 'armarios/' + key), snap => resolve(snap), { onlyOnce: true });
+      });
+      const data = snapshot.val();
+      if (data) {
+        nomeInput.value = data.nome;
+        numeroInput.value = data.numero;
+        editKey = key;
+        form.querySelector('button').textContent = 'Salvar Alterações';
+      }
+    }
+    if (e.target.classList.contains('btn-delete')) {
+      const key = e.target.dataset.key;
+      if (confirm('Quer mesmo excluir esse armário?')) {
+        try {
+          await remove(ref(db, 'armarios/' + key));
+        } catch (err) {
+          console.error('Erro ao deletar:', err);
+          alert('Erro ao deletar dados. Veja console.');
+        }
+      }
+    }
+  });
+</script>
+
+</body>
+</html>
