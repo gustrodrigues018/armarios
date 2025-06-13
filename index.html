@@ -83,19 +83,16 @@
 
     #pesquisa {
       width: 100%;
-      max-width: 700px;
+      max-width: 500px; /* reduzido para melhor centralização */
       padding: 14px 16px;
       border: 1px solid #ccc;
       border-radius: 8px;
       font-size: 16px;
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-      margin-bottom: 10px;
+      margin-bottom: 15px; /* espaçamento maior para o QR */
     }
 
-    /* ALTERAÇÃO: qrCode agora é canvas, mas o estilo pode continuar */
     #qrCode {
-      margin-bottom: 10px;
-      /* opcional: defina tamanho fixo para o canvas */
       width: 180px;
       height: 180px;
     }
@@ -171,12 +168,9 @@
   </form>
 
   <div class="barra-pesquisa">
-    <!-- Alteração: de div para canvas -->
-     <input type="text" id="pesquisa" placeholder="🔍 Pesquisar por nome, empresa ou número..." />
-    <p>Escaneie o QR Code para abrir o formulário.</p>
-     <canvas id="qrCode"></canvas>
+    <input type="text" id="pesquisa" placeholder="🔍 Pesquisar por nome, empresa ou número..." />
+    <canvas id="qrCode"></canvas>
   </div>
-
 
   <table id="tabelaArmarios">
     <thead>
