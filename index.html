@@ -57,6 +57,7 @@
       border: 1px solid #ccc;
       border-radius: 6px;
       font-size: 16px;
+      min-width: 200px;
     }
 
     button[type="submit"] {
@@ -92,7 +93,7 @@
     table {
       width: 100%;
       border-collapse: collapse;
-}
+    }
 
     th, td {
       padding: 16px 12px;
@@ -154,18 +155,20 @@
 <main>
   <form id="formArmario">
     <input type="text" id="nome" placeholder="Nome do Colaborador" required />
+    <input type="text" id="empresa" placeholder="Empresa" required />
     <input type="number" id="numero" placeholder="Número do Armário" required min="1" />
     <button type="submit">Adicionar / Atualizar</button>
   </form>
 
   <div class="barra-pesquisa">
-    <input type="text" id="pesquisa" placeholder="🔍 Pesquisar por nome ou número..." />
+    <input type="text" id="pesquisa" placeholder="🔍 Pesquisar por nome, empresa ou número..." />
   </div>
 
   <table id="tabelaArmarios">
     <thead>
       <tr>
         <th>Nome</th>
+        <th>Empresa</th>
         <th>Número do Armário</th>
         <th>Ações</th>
       </tr>
@@ -193,19 +196,20 @@
 
   const form = document.getElementById('formArmario');
   const nomeInput = document.getElementById('nome');
+  const empresaInput = document.getElementById('empresa');
   const numeroInput = document.getElementById('numero');
   const tabelaBody = document.querySelector('#tabelaArmarios tbody');
   const pesquisaInput = document.getElementById('pesquisa');
 
   let editKey = null;
 
-  // Renderiza os dados da tabela
   function renderTabela(data) {
     tabelaBody.innerHTML = '';
     data.forEach(({ key, val }) => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>${val.nome}</td>
+        <td>${val.empresa || ''}</td>
         <td>${val.numero}</td>
         <td>
           <button class="btn-edit" data-key="${key}">✏️</button>
@@ -216,21 +220,20 @@
     });
   }
 
-  // Atualiza tabela com filtro
   function atualizarTabelaFiltrada(dados) {
     const termo = pesquisaInput.value.toLowerCase();
     const filtrados = dados.filter(({ val }) =>
       val.nome.toLowerCase().includes(termo) ||
+      (val.empresa && val.empresa.toLowerCase().includes(termo)) ||
       val.numero.toString().includes(termo)
     );
     renderTabela(filtrados);
   }
 
-  // Escuta mudanças no DB em tempo real
   onValue(armariosRef, (snapshot) => {
     const dados = snapshot.val();
     if (!dados) {
-      tabelaBody.innerHTML = '<tr><td colspan="3">Sem dados cadastrados.</td></tr>';
+      tabelaBody.innerHTML = '<tr><td colspan="4">Sem dados cadastrados.</td></tr>';
       return;
     }
     const arr = Object.entries(dados).map(([key, val]) => ({ key, val }));
@@ -238,20 +241,20 @@
     pesquisaInput.oninput = () => atualizarTabelaFiltrada(arr);
   });
 
-  // Adicionar ou atualizar
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const nome = nomeInput.value.trim();
+    const empresa = empresaInput.value.trim();
     const numero = numeroInput.value.trim();
 
-    if (!nome || !numero) {
+    if (!nome || !empresa || !numero) {
       alert('Preencha todos os campos!');
       return;
     }
 
     try {
       if (editKey) {
-        await update(ref(db, 'armarios/' + editKey), { nome, numero });
+        await update(ref(db, 'armarios/' + editKey), { nome, empresa, numero });
         editKey = null;
         form.querySelector('button').textContent = 'Adicionar / Atualizar';
       } else {
@@ -264,7 +267,7 @@
           alert('Número do armário já está atribuído!');
           return;
         }
-        await push(armariosRef, { nome, numero });
+        await push(armariosRef, { nome, empresa, numero });
       }
 
       form.reset();
@@ -274,7 +277,6 @@
     }
   });
 
-  // Delegação de eventos para editar e deletar
   tabelaBody.addEventListener('click', async (e) => {
     if (e.target.classList.contains('btn-edit')) {
       const key = e.target.dataset.key;
@@ -284,11 +286,13 @@
       const data = snapshot.val();
       if (data) {
         nomeInput.value = data.nome;
+        empresaInput.value = data.empresa || '';
         numeroInput.value = data.numero;
         editKey = key;
         form.querySelector('button').textContent = 'Salvar Alterações';
       }
     }
+
     if (e.target.classList.contains('btn-delete')) {
       const key = e.target.dataset.key;
       if (confirm('Quer mesmo excluir esse armário?')) {
