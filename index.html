@@ -44,7 +44,9 @@
       margin-bottom: 30px;
     }
 
-    input {
+    input[type="text"],
+    input[type="number"],
+    #pesquisa {
       flex: 1;
       padding: 10px 12px;
       border: 1px solid #ccc;
@@ -64,6 +66,10 @@
 
     button[type="submit"]:hover {
       background-color: #0056b3;
+    }
+
+    .barra-pesquisa {
+      margin-bottom: 20px;
     }
 
     table {
@@ -127,6 +133,10 @@
     <button type="submit">Adicionar / Atualizar</button>
   </form>
 
+  <div class="barra-pesquisa">
+    <input type="text" id="pesquisa" placeholder="🔍 Pesquisar por nome ou número..." />
+  </div>
+
   <table id="tabelaArmarios">
     <thead>
       <tr>
@@ -159,12 +169,19 @@
   const form = document.getElementById('formArmario');
   const nomeInput = document.getElementById('nome');
   const numeroInput = document.getElementById('numero');
+  const pesquisaInput = document.getElementById('pesquisa');
   const tabelaBody = document.querySelector('#tabelaArmarios tbody');
 
   let editKey = null;
+  let dadosGlobais = [];
 
   function renderTabela(data) {
     tabelaBody.innerHTML = '';
+    if (data.length === 0) {
+      tabelaBody.innerHTML = '<tr><td colspan="3">Nenhum resultado encontrado.</td></tr>';
+      return;
+    }
+
     data.forEach(({ key, val }) => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
@@ -182,11 +199,13 @@
   onValue(armariosRef, (snapshot) => {
     const dados = snapshot.val();
     if (!dados) {
-      tabelaBody.innerHTML = '<tr><td colspan="3">Sem dados cadastrados.</td></tr>';
+      dadosGlobais = [];
+      renderTabela([]);
       return;
     }
-    const arr = Object.entries(dados).map(([key, val]) => ({ key, val }));
-    renderTabela(arr);
+
+    dadosGlobais = Object.entries(dados).map(([key, val]) => ({ key, val }));
+    renderTabela(dadosGlobais);
   });
 
   form.addEventListener('submit', async (e) => {
@@ -250,6 +269,14 @@
         }
       }
     }
+  });
+
+  pesquisaInput.addEventListener('input', () => {
+    const termo = pesquisaInput.value.toLowerCase().trim();
+    const filtrados = dadosGlobais.filter(({ val }) =>
+      val.nome.toLowerCase().includes(termo) || val.numero.toString().includes(termo)
+    );
+    renderTabela(filtrados);
   });
 </script>
 
