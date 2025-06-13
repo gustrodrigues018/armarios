@@ -77,7 +77,8 @@
     .barra-pesquisa {
       margin-bottom: 30px;
       display: flex;
-      justify-content: center;
+      flex-direction: column;
+      align-items: center;
     }
 
     #pesquisa {
@@ -88,6 +89,11 @@
       border-radius: 8px;
       font-size: 16px;
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+      margin-bottom: 10px;
+    }
+
+    #qrCode {
+      margin-bottom: 10px;
     }
 
     table {
@@ -163,17 +169,7 @@
   <div class="barra-pesquisa">
     <input type="text" id="pesquisa" placeholder="🔍 Pesquisar por nome, empresa ou número..." />
     <div id="qrCode"></div>
-<p>Escaneie o QR Code para abrir o formulário.</p>
-
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.4.4/build/qrcode.min.js"></script>
-<script>
-  const urlFormulario = window.location.origin + '/formulario.html'; // Ajuste conforme o caminho correto
-  QRCode.toCanvas(document.getElementById('qrCode'), urlFormulario, function (error) {
-    if (error) console.error(error);
-    console.log('QR Code gerado!');
-  });
-</script>
-
+    <p>Escaneie o QR Code para abrir o formulário.</p>
   </div>
 
   <table id="tabelaArmarios">
@@ -188,6 +184,26 @@
     <tbody></tbody>
   </table>
 </main>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.4.4/build/qrcode.min.js"></script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const qrCodeElement = document.getElementById('qrCode');
+    const urlFormulario = window.location.origin + '/formulario.html'; // Ajuste o caminho se necessário
+    if (qrCodeElement) {
+      QRCode.toCanvas(qrCodeElement, urlFormulario, function (error) {
+        if (error) {
+          console.error('Erro ao gerar QR Code:', error);
+        } else {
+          console.log('QR Code gerado!');
+        }
+      });
+    } else {
+      console.error('Elemento #qrCode não encontrado.');
+    }
+  });
+</script>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
