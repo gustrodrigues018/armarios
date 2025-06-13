@@ -18,7 +18,6 @@
       align-items: center;
       min-height: 100vh;
     }
-
     header {
       width: 100%;
       background-color: #1f3b68;
@@ -27,7 +26,6 @@
       text-align: center;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
-
     main {
       width: 100%;
       max-width: 1100px;
@@ -37,19 +35,16 @@
       padding: 40px;
       margin: 40px 20px;
     }
-
     h1 {
       margin: 0;
       font-size: 28px;
     }
-
     form {
       display: flex;
       flex-wrap: wrap;
       gap: 20px;
       margin-bottom: 30px;
     }
-
     input[type="text"],
     input[type="number"] {
       flex: 1;
@@ -59,7 +54,6 @@
       font-size: 16px;
       min-width: 200px;
     }
-
     button[type="submit"] {
       background-color: #007bff;
       color: white;
@@ -70,11 +64,9 @@
       transition: background 0.3s;
       cursor: pointer;
     }
-
     button[type="submit"]:hover {
       background-color: #0056b3;
     }
-
     .barra-pesquisa {
       display: flex;
       align-items: center;
@@ -82,7 +74,6 @@
       gap: 20px;
       margin-bottom: 30px;
     }
-
     #pesquisa {
       width: 350px;
       padding: 14px 16px;
@@ -91,34 +82,28 @@
       font-size: 16px;
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
     }
-
     #qrCode {
       width: 180px;
       height: 180px;
     }
-
     table {
       width: 100%;
       border-collapse: collapse;
     }
-
     th, td {
       padding: 16px 12px;
       border-bottom: 1px solid #ddd;
       text-align: left;
     }
-
     th {
       background-color: #1f3b68;
       color: white;
       font-weight: 600;
       font-size: 16px;
     }
-
     tr:hover {
       background-color: #f1f1f1;
     }
-
     .btn-edit, .btn-delete {
       border: none;
       padding: 8px 14px;
@@ -127,36 +112,29 @@
       margin-right: 6px;
       cursor: pointer;
     }
-
     .btn-edit {
       background-color: #ffc107;
       color: #212529;
     }
-
     .btn-delete {
       background-color: #dc3545;
       color: white;
     }
-
     @media (max-width: 768px) {
       main {
         padding: 20px;
       }
-
       form {
         flex-direction: column;
       }
-
       #pesquisa {
         max-width: 100%;
         width: 100%;
       }
-
       .barra-pesquisa {
         flex-direction: column;
         gap: 15px;
       }
-
       #qrCode {
         width: 150px;
         height: 150px;
@@ -174,12 +152,13 @@
   <form id="formArmario">
     <input type="text" id="nome" placeholder="Nome do Colaborador" required />
     <input type="text" id="empresa" placeholder="Empresa" required />
+    <input type="text" id="setor" placeholder="Setor" required />
     <input type="number" id="numero" placeholder="Número do Armário" required min="1" />
     <button type="submit">Adicionar / Atualizar</button>
   </form>
 
   <div class="barra-pesquisa">
-    <input type="text" id="pesquisa" placeholder="🔍 Pesquisar por nome, empresa ou número..." />
+    <input type="text" id="pesquisa" placeholder="🔍 Pesquisar por nome, empresa, setor ou número..." />
     <canvas id="qrCode"></canvas>
   </div>
 
@@ -188,6 +167,7 @@
       <tr>
         <th>Nome</th>
         <th>Empresa</th>
+        <th>Setor</th>
         <th>Número do Armário</th>
         <th>Ações</th>
       </tr>
@@ -201,13 +181,9 @@
 <script>
   document.addEventListener('DOMContentLoaded', () => {
     const qrCodeElement = document.getElementById('qrCode');
-    const urlFormulario = window.location.origin + '/formulario.html'; // ajuste se necessário
+    const urlFormulario = window.location.origin + '/formulario.html';
     QRCode.toCanvas(qrCodeElement, urlFormulario, function (error) {
-      if (error) {
-        console.error('Erro ao gerar QR Code:', error);
-      } else {
-        console.log('QR Code gerado!');
-      }
+      if (error) console.error('Erro ao gerar QR Code:', error);
     });
   });
 </script>
@@ -232,6 +208,7 @@
   const form = document.getElementById('formArmario');
   const nomeInput = document.getElementById('nome');
   const empresaInput = document.getElementById('empresa');
+  const setorInput = document.getElementById('setor');
   const numeroInput = document.getElementById('numero');
   const tabelaBody = document.querySelector('#tabelaArmarios tbody');
   const pesquisaInput = document.getElementById('pesquisa');
@@ -245,6 +222,7 @@
       tr.innerHTML = `
         <td>${val.nome}</td>
         <td>${val.empresa || ''}</td>
+        <td>${val.setor || ''}</td>
         <td>${val.numero}</td>
         <td>
           <button class="btn-edit" data-key="${key}">✏️</button>
@@ -260,6 +238,7 @@
     const filtrados = dados.filter(({ val }) =>
       val.nome.toLowerCase().includes(termo) ||
       (val.empresa && val.empresa.toLowerCase().includes(termo)) ||
+      (val.setor && val.setor.toLowerCase().includes(termo)) ||
       val.numero.toString().includes(termo)
     );
     renderTabela(filtrados);
@@ -268,7 +247,7 @@
   onValue(armariosRef, (snapshot) => {
     const dados = snapshot.val();
     if (!dados) {
-      tabelaBody.innerHTML = '<tr><td colspan="4">Sem dados cadastrados.</td></tr>';
+      tabelaBody.innerHTML = '<tr><td colspan="5">Sem dados cadastrados.</td></tr>';
       return;
     }
     const arr = Object.entries(dados).map(([key, val]) => ({ key, val }));
@@ -280,16 +259,17 @@
     e.preventDefault();
     const nome = nomeInput.value.trim();
     const empresa = empresaInput.value.trim();
+    const setor = setorInput.value.trim();
     const numero = numeroInput.value.trim();
 
-    if (!nome || !empresa || !numero) {
+    if (!nome || !empresa || !setor || !numero) {
       alert('Preencha todos os campos!');
       return;
     }
 
     try {
       if (editKey) {
-        await update(ref(db, 'armarios/' + editKey), { nome, empresa, numero });
+        await update(ref(db, 'armarios/' + editKey), { nome, empresa, setor, numero });
         editKey = null;
         form.querySelector('button').textContent = 'Adicionar / Atualizar';
       } else {
@@ -302,9 +282,8 @@
           alert('Número do armário já está atribuído!');
           return;
         }
-        await push(armariosRef, { nome, empresa, numero });
+        await push(armariosRef, { nome, empresa, setor, numero });
       }
-
       form.reset();
     } catch (err) {
       console.error('Erro ao salvar:', err);
@@ -322,6 +301,7 @@
       if (data) {
         nomeInput.value = data.nome;
         empresaInput.value = data.empresa || '';
+        setorInput.value = data.setor || '';
         numeroInput.value = data.numero;
         editKey = key;
         form.querySelector('button').textContent = 'Salvar Alterações';
