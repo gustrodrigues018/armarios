@@ -1,38 +1,76 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-<meta charset="UTF-8" />
-<title>Formulário de Armário</title>
-<style>
-  body {
-    font-family: 'Segoe UI', sans-serif;
-    display: flex; justify-content: center; align-items: center;
-    height: 100vh; margin: 0; background: #f4f6f9;
-  }
-  form {
-    background: white; padding: 30px; border-radius: 10px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    width: 320px;
-  }
-  input, button {
-    width: 100%; margin-top: 15px; padding: 12px;
-    font-size: 16px; border-radius: 6px; border: 1px solid #ccc;
-  }
-  button {
-    background-color: #007bff; color: white; border: none;
-    cursor: pointer;
-  }
-  button:hover {
-    background-color: #0056b3;
-  }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Formulário de Armário</title>
+  <style>
+    /* Reset básico */
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f4f6f9;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    form {
+      background: white;
+      padding: 30px 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 360px;
+      box-sizing: border-box;
+    }
+
+    input, button {
+      width: 100%;
+      padding: 14px 16px;
+      margin-top: 16px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 1.5px solid #ccc;
+      transition: border-color 0.3s;
+      font-weight: 500;
+    }
+
+    input:focus {
+      border-color: #007bff;
+      outline: none;
+      box-shadow: 0 0 5px rgba(0,123,255,0.5);
+    }
+
+    button {
+      background-color: #007bff;
+      border: none;
+      color: white;
+      cursor: pointer;
+      font-weight: 600;
+      margin-top: 24px;
+      transition: background-color 0.3s;
+    }
+
+    button:hover,
+    button:focus {
+      background-color: #0056b3;
+      outline: none;
+    }
+  </style>
 </head>
 <body>
 
-<form id="formArmario">
-  <input type="text" id="nome" placeholder="Nome do Colaborador" required />
-  <input type="text" id="empresa" placeholder="Empresa" required />
-  <input type="number" id="numero" placeholder="Número do Armário" required min="1" />
+<form id="formArmario" autocomplete="off">
+  <input type="text" id="nome" name="nome" placeholder="Nome do Colaborador" required autocomplete="off" />
+  <input type="text" id="empresa" name="empresa" placeholder="Empresa" required autocomplete="off" />
+  <input type="number" id="numero" name="numero" placeholder="Número do Armário" required min="1" />
   <button type="submit">Enviar</button>
 </form>
 
@@ -56,12 +94,13 @@
   const form = document.getElementById('formArmario');
   form.addEventListener('submit', async e => {
     e.preventDefault();
-    const nome = document.getElementById('nome').value.trim();
-    const empresa = document.getElementById('empresa').value.trim();
-    const numero = document.getElementById('numero').value.trim();
+
+    const nome = form.nome.value.trim();
+    const empresa = form.empresa.value.trim();
+    const numero = form.numero.value.trim();
 
     if (!nome || !empresa || !numero) {
-      alert('Preencha todos os campos!');
+      alert('Por favor, preencha todos os campos!');
       return;
     }
 
@@ -69,9 +108,10 @@
       await push(armariosRef, { nome, empresa, numero });
       alert('Cadastro realizado com sucesso!');
       form.reset();
+      form.nome.focus();
     } catch(err) {
-      console.error(err);
-      alert('Erro ao enviar dados.');
+      console.error('Erro ao enviar dados:', err);
+      alert('Erro ao enviar dados. Tente novamente.');
     }
   });
 </script>
