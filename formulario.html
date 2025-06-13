@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8" />
+<title>Formulário de Armário</title>
+<style>
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    display: flex; justify-content: center; align-items: center;
+    height: 100vh; margin: 0; background: #f4f6f9;
+  }
+  form {
+    background: white; padding: 30px; border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    width: 320px;
+  }
+  input, button {
+    width: 100%; margin-top: 15px; padding: 12px;
+    font-size: 16px; border-radius: 6px; border: 1px solid #ccc;
+  }
+  button {
+    background-color: #007bff; color: white; border: none;
+    cursor: pointer;
+  }
+  button:hover {
+    background-color: #0056b3;
+  }
+</style>
+</head>
+<body>
+
+<form id="formArmario">
+  <input type="text" id="nome" placeholder="Nome do Colaborador" required />
+  <input type="text" id="empresa" placeholder="Empresa" required />
+  <input type="number" id="numero" placeholder="Número do Armário" required min="1" />
+  <button type="submit">Enviar</button>
+</form>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+  import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCfBDyXi9sYCgb0Z_1ApmPk2PcwL5nhXI4",
+    authDomain: "armarios-b3c30.firebaseapp.com",
+    projectId: "armarios-b3c30",
+    storageBucket: "armarios-b3c30.appspot.com",
+    messagingSenderId: "1036955127916",
+    appId: "1:1036955127916:web:de798f7e226a9f58e60849"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const armariosRef = ref(db, 'armarios');
+
+  const form = document.getElementById('formArmario');
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const nome = document.getElementById('nome').value.trim();
+    const empresa = document.getElementById('empresa').value.trim();
+    const numero = document.getElementById('numero').value.trim();
+
+    if (!nome || !empresa || !numero) {
+      alert('Preencha todos os campos!');
+      return;
+    }
+
+    try {
+      await push(armariosRef, { nome, empresa, numero });
+      alert('Cadastro realizado com sucesso!');
+      form.reset();
+    } catch(err) {
+      console.error(err);
+      alert('Erro ao enviar dados.');
+    }
+  });
+</script>
+
+</body>
+</html>
