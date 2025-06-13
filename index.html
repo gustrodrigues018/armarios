@@ -162,6 +162,18 @@
 
   <div class="barra-pesquisa">
     <input type="text" id="pesquisa" placeholder="🔍 Pesquisar por nome, empresa ou número..." />
+    <div id="qrCode"></div>
+<p>Escaneie o QR Code para abrir o formulário.</p>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.4.4/build/qrcode.min.js"></script>
+<script>
+  const urlFormulario = window.location.origin + '/formulario.html'; // Ajuste conforme o caminho correto
+  QRCode.toCanvas(document.getElementById('qrCode'), urlFormulario, function (error) {
+    if (error) console.error(error);
+    console.log('QR Code gerado!');
+  });
+</script>
+
   </div>
 
   <table id="tabelaArmarios">
