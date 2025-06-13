@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Formulário de Armário</title>
   <style>
-    /* Reset básico */
     *, *::before, *::after {
       box-sizing: border-box;
     }
@@ -28,7 +27,6 @@
       box-shadow: 0 4px 15px rgba(0,0,0,0.1);
       width: 100%;
       max-width: 360px;
-      box-sizing: border-box;
     }
 
     input, button {
@@ -68,8 +66,9 @@
 <body>
 
 <form id="formArmario" autocomplete="off">
-  <input type="text" id="nome" name="nome" placeholder="Nome do Colaborador" required autocomplete="off" />
-  <input type="text" id="empresa" name="empresa" placeholder="Empresa" required autocomplete="off" />
+  <input type="text" id="nome" name="nome" placeholder="Nome do Colaborador" required />
+  <input type="text" id="empresa" name="empresa" placeholder="Empresa" required />
+  <input type="text" id="setor" name="setor" placeholder="Setor" required />
   <input type="number" id="numero" name="numero" placeholder="Número do Armário" required min="1" />
   <button type="submit">Enviar</button>
 </form>
@@ -97,15 +96,16 @@
 
     const nome = form.nome.value.trim();
     const empresa = form.empresa.value.trim();
+    const setor = form.setor.value.trim();
     const numero = form.numero.value.trim();
 
-    if (!nome || !empresa || !numero) {
+    if (!nome || !empresa || !setor || !numero) {
       alert('Por favor, preencha todos os campos!');
       return;
     }
 
     try {
-      await push(armariosRef, { nome, empresa, numero });
+      await push(armariosRef, { nome, empresa, setor, numero });
       alert('Cadastro realizado com sucesso!');
       form.reset();
       form.nome.focus();
