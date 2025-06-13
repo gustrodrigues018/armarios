@@ -4,52 +4,154 @@
   <meta charset="UTF-8" />
   <title>Controle de Armários</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    input, button { padding: 8px; margin: 5px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-    th { background: #007bff; color: white; }
-    button { cursor: pointer; }
-    .btn-edit { background: #ffc107; border: none; }
-    .btn-delete { background: #dc3545; border: none; color: white; }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f4f6f9;
+      margin: 0;
+      padding: 0;
+      color: #333;
+    }
+
+    header {
+      background-color: #1f3b68;
+      color: white;
+      padding: 20px 40px;
+      text-align: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    main {
+      max-width: 900px;
+      margin: 40px auto;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+      padding: 30px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 28px;
+    }
+
+    form {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+
+    input {
+      flex: 1;
+      padding: 10px 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 16px;
+    }
+
+    button[type="submit"] {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-size: 16px;
+      transition: background 0.3s;
+    }
+
+    button[type="submit"]:hover {
+      background-color: #0056b3;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    th, td {
+      padding: 12px 10px;
+      border-bottom: 1px solid #ddd;
+      text-align: left;
+    }
+
+    th {
+      background-color: #1f3b68;
+      color: white;
+      font-weight: 600;
+    }
+
+    tr:hover {
+      background-color: #f1f1f1;
+    }
+
+    .btn-edit, .btn-delete {
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 14px;
+      margin-right: 5px;
+      cursor: pointer;
+    }
+
+    .btn-edit {
+      background-color: #ffc107;
+      color: #212529;
+    }
+
+    .btn-delete {
+      background-color: #dc3545;
+      color: white;
+    }
+
+    @media (max-width: 600px) {
+      form {
+        flex-direction: column;
+      }
+    }
   </style>
 </head>
 <body>
 
-<h1>Controle de Armários</h1>
+<header>
+  <h1>Controle de Armários</h1>
+</header>
 
-<form id="formArmario">
-  <input type="text" id="nome" placeholder="Nome do Colaborador" required />
-  <input type="number" id="numero" placeholder="Número do Armário" required min="1" />
-  <button type="submit">Adicionar / Atualizar</button>
-</form>
+<main>
+  <form id="formArmario">
+    <input type="text" id="nome" placeholder="Nome do Colaborador" required />
+    <input type="number" id="numero" placeholder="Número do Armário" required min="1" />
+    <button type="submit">Adicionar / Atualizar</button>
+  </form>
 
-<table id="tabelaArmarios">
-  <thead>
-    <tr>
-      <th>Nome</th>
-      <th>Número do Armário</th>
-      <th>Ações</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
+  <table id="tabelaArmarios">
+    <thead>
+      <tr>
+        <th>Nome</th>
+        <th>Número do Armário</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</main>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
   import { getDatabase, ref, push, onValue, set, remove, update } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
 
-  // Config Firebase - usa o seu mesmo
   const firebaseConfig = {
     apiKey: "AIzaSyCfBDyXi9sYCgb0Z_1ApmPk2PcwL5nhXI4",
     authDomain: "armarios-b3c30.firebaseapp.com",
     projectId: "armarios-b3c30",
-    storageBucket: "armarios-b3c30.firebasestorage.app",
+    storageBucket: "armarios-b3c30.appspot.com",
     messagingSenderId: "1036955127916",
     appId: "1:1036955127916:web:de798f7e226a9f58e60849"
   };
 
-  // Initialize Firebase
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
   const armariosRef = ref(db, 'armarios');
@@ -61,7 +163,6 @@
 
   let editKey = null;
 
-  // Renderiza os dados da tabela
   function renderTabela(data) {
     tabelaBody.innerHTML = '';
     data.forEach(({ key, val }) => {
@@ -70,30 +171,26 @@
         <td>${val.nome}</td>
         <td>${val.numero}</td>
         <td>
-          <button class="btn-edit" data-key="${key}">✏️</button>
-          <button class="btn-delete" data-key="${key}">🗑️</button>
+          <button class="btn-edit" data-key="${key}">✏️ Editar</button>
+          <button class="btn-delete" data-key="${key}">🗑️ Excluir</button>
         </td>
       `;
       tabelaBody.appendChild(tr);
     });
   }
 
-  // Escuta mudanças no DB em tempo real
   onValue(armariosRef, (snapshot) => {
     const dados = snapshot.val();
     if (!dados) {
       tabelaBody.innerHTML = '<tr><td colspan="3">Sem dados cadastrados.</td></tr>';
       return;
     }
-    // Tranforma o objeto em array [{key, val}]
     const arr = Object.entries(dados).map(([key, val]) => ({ key, val }));
     renderTabela(arr);
   });
 
-  // Adicionar ou atualizar
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-
     const nome = nomeInput.value.trim();
     const numero = numeroInput.value.trim();
 
@@ -104,12 +201,10 @@
 
     try {
       if (editKey) {
-        // Atualiza o registro
         await update(ref(db, 'armarios/' + editKey), { nome, numero });
         editKey = null;
         form.querySelector('button').textContent = 'Adicionar / Atualizar';
       } else {
-        // Verifica se o número já existe
         const snapshot = await new Promise(resolve => {
           onValue(armariosRef, snap => resolve(snap), { onlyOnce: true });
         });
@@ -129,7 +224,6 @@
     }
   });
 
-  // Delegação de evento para botões de editar e deletar
   tabelaBody.addEventListener('click', async (e) => {
     if (e.target.classList.contains('btn-edit')) {
       const key = e.target.dataset.key;
@@ -144,6 +238,7 @@
         form.querySelector('button').textContent = 'Salvar Alterações';
       }
     }
+
     if (e.target.classList.contains('btn-delete')) {
       const key = e.target.dataset.key;
       if (confirm('Quer mesmo excluir esse armário?')) {
