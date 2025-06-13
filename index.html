@@ -92,8 +92,12 @@
       margin-bottom: 10px;
     }
 
+    /* ALTERAÇÃO: qrCode agora é canvas, mas o estilo pode continuar */
     #qrCode {
       margin-bottom: 10px;
+      /* opcional: defina tamanho fixo para o canvas */
+      width: 180px;
+      height: 180px;
     }
 
     table {
@@ -167,10 +171,12 @@
   </form>
 
   <div class="barra-pesquisa">
-    <input type="text" id="pesquisa" placeholder="🔍 Pesquisar por nome, empresa ou número..." />
-    <div id="qrCode"></div>
+    <!-- Alteração: de div para canvas -->
+    <canvas id="qrCode"></canvas>
     <p>Escaneie o QR Code para abrir o formulário.</p>
   </div>
+
+  <input type="text" id="pesquisa" placeholder="🔍 Pesquisar por nome, empresa ou número..." />
 
   <table id="tabelaArmarios">
     <thead>
@@ -190,18 +196,14 @@
 <script>
   document.addEventListener('DOMContentLoaded', () => {
     const qrCodeElement = document.getElementById('qrCode');
-    const urlFormulario = window.location.origin + '/formulario.html'; // Ajuste o caminho se necessário
-    if (qrCodeElement) {
-      QRCode.toCanvas(qrCodeElement, urlFormulario, function (error) {
-        if (error) {
-          console.error('Erro ao gerar QR Code:', error);
-        } else {
-          console.log('QR Code gerado!');
-        }
-      });
-    } else {
-      console.error('Elemento #qrCode não encontrado.');
-    }
+    const urlFormulario = window.location.origin + '/formulario.html'; // ajuste se necessário
+    QRCode.toCanvas(qrCodeElement, urlFormulario, function (error) {
+      if (error) {
+        console.error('Erro ao gerar QR Code:', error);
+      } else {
+        console.log('QR Code gerado!');
+      }
+    });
   });
 </script>
 
