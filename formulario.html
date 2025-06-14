@@ -135,8 +135,12 @@
 
       try {
         for (const item of rows) {
-          const { nome, empresa, setor, numero } = item;
-          if (nome && empresa && setor && numero) {
+          let { nome, empresa, setor, numero } = item;
+
+          // Substitui nome vazio por um marcador
+          if (!nome) nome = "(Sem nome)";
+
+          if (empresa && setor && numero) {
             await push(armariosRef, { nome, empresa, setor, numero });
           }
         }
