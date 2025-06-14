@@ -17,6 +17,7 @@
       justify-content: center;
       align-items: center;
       min-height: 100vh;
+      flex-direction: column;
     }
     form {
       background: white;
@@ -25,8 +26,9 @@
       box-shadow: 0 4px 15px rgba(0,0,0,0.1);
       width: 100%;
       max-width: 380px;
+      margin-bottom: 30px;
     }
-    input, button {
+    input, button, textarea {
       width: 100%;
       padding: 14px 16px;
       margin-top: 16px;
@@ -35,8 +37,10 @@
       border: 1.5px solid #ccc;
       transition: border-color 0.3s;
       font-weight: 500;
+      font-family: inherit;
+      resize: vertical;
     }
-    input:focus {
+    input:focus, textarea:focus {
       border-color: #007bff;
       outline: none;
       box-shadow: 0 0 5px rgba(0,123,255,0.5);
@@ -55,21 +59,31 @@
       background-color: #0056b3;
       outline: none;
     }
+    hr {
+      margin: 24px 0;
+      border: none;
+      border-top: 1px solid #ddd;
+    }
   </style>
 </head>
 <body>
 
+<!-- Formulário individual -->
 <form id="formArmario" autocomplete="off">
   <input type="text" id="nome" name="nome" placeholder="Nome do Colaborador" required />
   <input type="text" id="empresa" name="empresa" placeholder="Empresa" required />
   <input type="text" id="setor" name="setor" placeholder="Setor" required />
   <input type="number" id="numero" name="numero" placeholder="Número do Armário" required min="1" />
   <button type="submit">Enviar</button>
+</form>
 
-  <hr style="margin: 24px 0;">
+<hr>
 
-  <input type="file" id="excelFile" accept=".xlsx,.xls,.csv,.ods,.pdf" />
-  <button type="button" id="importarExcelBtn">Importar Planilha / PDF</button>
+<!-- Área para colar vários dados -->
+<form id="formMultiplo" autocomplete="off" style="max-width: 380px; width: 100%;">
+  <label for="dadosMultiplos" style="font-weight:600;">Cole os dados para adicionar múltiplos (copie direto da planilha):</label>
+  <textarea id="dadosMultiplos" rows="8" placeholder="nome[tab]empresa[tab]setor[tab]numero&#10;Exemplo: João Silva\tEmpresa X\tFinanceiro\t10" required></textarea>
+  <button type="button" id="adicionarMultiplosBtn">Adicionar Todos</button>
 </form>
 
 <!-- Firebase -->
@@ -90,6 +104,7 @@
   const db = getDatabase(app);
   const armariosRef = ref(db, 'armarios');
 
+  // Envio individual pelo formulário
   const form = document.getElementById('formArmario');
   form.addEventListener('submit', async e => {
     e.preventDefault();
@@ -115,52 +130,46 @@
     }
   });
 
-  // IMPORTAÇÃO DE PLANILHA OU PDF
-  document.getElementById('importarExcelBtn').addEventListener('click', async () => {
-    const fileInput = document.getElementById('excelFile');
-    const file = fileInput.files[0];
-    if (!file) {
-      alert('Selecione um arquivo para importar!');
+  // Envio múltiplo por área de texto (colando dados direto da planilha, separados por TAB)
+  document.getElementById('adicionarMultiplosBtn').addEventListener('click', async () => {
+    const texto = document.getElementById('dadosMultiplos').value.trim();
+    if (!texto) {
+      alert('Cole os dados para adicionar.');
       return;
     }
 
-    const fileExt = file.name.split('.').pop().toLowerCase();
+    const linhas = texto.split('\n').filter(l => l.trim() !== '');
 
-    if (fileExt === 'pdf') {
-      alert('Importação de PDF ainda não suportada. Em breve implementaremos!');
-      fileInput.value = '';
-      return;
-    }
+    let sucesso = 0;
+    let falhas = 0;
 
-    // Para planilhas aceitas (xlsx, xls, csv, ods)
-    try {
-      const data = await file.arrayBuffer();
-      const workbook = XLSX.read(data, { type: 'array' });
+    for (const linha of linhas) {
+      // Separar por TAB (\t) para aceitar colar direto da planilha
+      const campos = linha.split('\t').map(c => c.trim());
 
-      const sheetName = workbook.SheetNames[0];
-      const sheet = workbook.Sheets[sheetName];
-      const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
-
-      for (const item of rows) {
-        let { nome, empresa, setor, numero } = item;
-
-        if (!nome) nome = "(Sem nome)";
-        if (!numero) continue;
-
-        await push(armariosRef, { nome, empresa, setor, numero: String(numero) });
+      if (campos.length !== 4) {
+        falhas++;
+        continue; // pula linhas inválidas
       }
 
-      alert('Planilha importada com sucesso!');
-      fileInput.value = '';
-    } catch (err) {
-      console.error('Erro ao importar arquivo:', err);
-      alert('Erro ao importar arquivo. Veja o console para detalhes.');
+      const [nome, empresa, setor, numero] = campos;
+      if (!nome || !empresa || !setor || !numero) {
+        falhas++;
+        continue;
+      }
+
+      try {
+        await push(armariosRef, { nome, empresa, setor, numero });
+        sucesso++;
+      } catch {
+        falhas++;
+      }
     }
+
+    alert(`Importação finalizada.\nSucesso: ${sucesso}\nFalhas: ${falhas}`);
+    if (sucesso > 0) document.getElementById('dadosMultiplos').value = '';
   });
 </script>
-
-<!-- SheetJS para leitura do Excel -->
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
 </body>
 </html>
