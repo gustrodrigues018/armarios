@@ -68,8 +68,8 @@
 
   <hr style="margin: 24px 0;">
 
-  <input type="file" id="excelFile" accept=".xlsx" />
-  <button type="button" id="importarExcelBtn">Importar Planilha Excel</button>
+  <input type="file" id="excelFile" accept=".xlsx,.xls,.csv,.ods,.pdf" />
+  <button type="button" id="importarExcelBtn">Importar Planilha / PDF</button>
 </form>
 
 <!-- Firebase -->
@@ -115,42 +115,47 @@
     }
   });
 
-  // IMPORTAÇÃO DE PLANILHA EXCEL
-  document.getElementById('importarExcelBtn').addEventListener('click', () => {
+  // IMPORTAÇÃO DE PLANILHA OU PDF
+  document.getElementById('importarExcelBtn').addEventListener('click', async () => {
     const fileInput = document.getElementById('excelFile');
     const file = fileInput.files[0];
     if (!file) {
-      alert('Selecione uma planilha Excel para importar!');
+      alert('Selecione um arquivo para importar!');
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const data = new Uint8Array(e.target.result);
+    const fileExt = file.name.split('.').pop().toLowerCase();
+
+    if (fileExt === 'pdf') {
+      alert('Importação de PDF ainda não suportada. Em breve implementaremos!');
+      fileInput.value = '';
+      return;
+    }
+
+    // Para planilhas aceitas (xlsx, xls, csv, ods)
+    try {
+      const data = await file.arrayBuffer();
       const workbook = XLSX.read(data, { type: 'array' });
 
       const sheetName = workbook.SheetNames[0];
       const sheet = workbook.Sheets[sheetName];
       const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
 
-      try {
-        for (const item of rows) {
-          let { nome, empresa, setor, numero } = item;
+      for (const item of rows) {
+        let { nome, empresa, setor, numero } = item;
 
-          // Substitui nome vazio por um marcador
-          if (!nome) nome = "(Sem nome)";
+        if (!nome) nome = "(Sem nome)";
+        if (!numero) continue;
 
-          if (empresa && setor && numero) {
-            await push(armariosRef, { nome, empresa, setor, numero });
-          }
-        }
-        alert('Planilha importada com sucesso!');
-      } catch (err) {
-        console.error('Erro ao importar Excel:', err);
-        alert('Erro ao importar planilha. Verifique o console.');
+        await push(armariosRef, { nome, empresa, setor, numero: String(numero) });
       }
-    };
-    reader.readAsArrayBuffer(file);
+
+      alert('Planilha importada com sucesso!');
+      fileInput.value = '';
+    } catch (err) {
+      console.error('Erro ao importar arquivo:', err);
+      alert('Erro ao importar arquivo. Veja o console para detalhes.');
+    }
   });
 </script>
 
