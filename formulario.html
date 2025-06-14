@@ -82,7 +82,7 @@
 <!-- Área para colar vários dados -->
 <form id="formMultiplo" autocomplete="off" style="max-width: 380px; width: 100%;">
   <label for="dadosMultiplos" style="font-weight:600;">Cole os dados para adicionar múltiplos (copie direto da planilha):</label>
-  <textarea id="dadosMultiplos" rows="8" placeholder="nome[tab]empresa[tab]setor[tab]numero&#10;Exemplo: João Silva\tEmpresa X\tFinanceiro\t10" required></textarea>
+  <textarea id="dadosMultiplos" rows="8" placeholder="nome[tab]empresa[tab]setor&#10;Exemplo: João Silva\tEmpresa X\tFinanceiro" required></textarea>
   <button type="button" id="adicionarMultiplosBtn">Adicionar Todos</button>
 </form>
 
@@ -142,21 +142,26 @@
 
     let sucesso = 0;
     let falhas = 0;
+    let contadorNumero = 1;
 
     for (const linha of linhas) {
       // Separar por TAB (\t) para aceitar colar direto da planilha
       const campos = linha.split('\t').map(c => c.trim());
 
-      if (campos.length !== 4) {
-        falhas++;
-        continue; // pula linhas inválidas
-      }
-
-      const [nome, empresa, setor, numero] = campos;
-      if (!nome || !empresa || !setor || !numero) {
+      // Validar só os três primeiros campos (nome, empresa, setor)
+      if (campos.length < 3) {
         falhas++;
         continue;
       }
+
+      const [nome, empresa, setor] = campos;
+
+      if (!nome || !empresa || !setor) {
+        falhas++;
+        continue;
+      }
+
+      const numero = String(contadorNumero++);
 
       try {
         await push(armariosRef, { nome, empresa, setor, numero });
