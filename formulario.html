@@ -24,14 +24,24 @@
       -moz-osx-font-smoothing: grayscale;
     }
 
-    h1 {
-      text-align: center;
-      font-weight: 700;
-      color: #34495e;
-      margin-bottom: 30px;
-      font-size: 2.25rem;
-      letter-spacing: 1px;
-    }
+   h1 {
+  /* Remove o alinhamento central padrão */
+  /* text-align: center; */
+  font-weight: 700;
+  color: #34495e;
+  margin-bottom: 30px;
+  font-size: 2.25rem;
+  letter-spacing: 1px;
+  text-align: left; /* padrão para mobile */
+}
+
+/* Centraliza título só em desktop (largura >= 768px) */
+@media (min-width: 768px) {
+  h1 {
+    text-align: center;
+  }
+}
+
 
     form {
       background: #ffffff;
