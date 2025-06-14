@@ -8,7 +8,6 @@
     *, *::before, *::after {
       box-sizing: border-box;
     }
-
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background: #f4f6f9;
@@ -19,16 +18,14 @@
       align-items: center;
       min-height: 100vh;
     }
-
     form {
       background: white;
       padding: 30px 25px;
       border-radius: 12px;
       box-shadow: 0 4px 15px rgba(0,0,0,0.1);
       width: 100%;
-      max-width: 360px;
+      max-width: 380px;
     }
-
     input, button {
       width: 100%;
       padding: 14px 16px;
@@ -39,13 +36,11 @@
       transition: border-color 0.3s;
       font-weight: 500;
     }
-
     input:focus {
       border-color: #007bff;
       outline: none;
       box-shadow: 0 0 5px rgba(0,123,255,0.5);
     }
-
     button {
       background-color: #007bff;
       border: none;
@@ -55,7 +50,6 @@
       margin-top: 24px;
       transition: background-color 0.3s;
     }
-
     button:hover,
     button:focus {
       background-color: #0056b3;
@@ -71,8 +65,14 @@
   <input type="text" id="setor" name="setor" placeholder="Setor" required />
   <input type="number" id="numero" name="numero" placeholder="Número do Armário" required min="1" />
   <button type="submit">Enviar</button>
+
+  <hr style="margin: 24px 0;">
+
+  <input type="file" id="excelFile" accept=".xlsx" />
+  <button type="button" id="importarExcelBtn">Importar Planilha Excel</button>
 </form>
 
+<!-- Firebase -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
   import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
@@ -114,7 +114,44 @@
       alert('Erro ao enviar dados. Tente novamente.');
     }
   });
+
+  // IMPORTAÇÃO DE PLANILHA EXCEL
+  document.getElementById('importarExcelBtn').addEventListener('click', () => {
+    const fileInput = document.getElementById('excelFile');
+    const file = fileInput.files[0];
+    if (!file) {
+      alert('Selecione uma planilha Excel para importar!');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+      try {
+        for (const item of rows) {
+          const { nome, empresa, setor, numero } = item;
+          if (nome && empresa && setor && numero) {
+            await push(armariosRef, { nome, empresa, setor, numero });
+          }
+        }
+        alert('Planilha importada com sucesso!');
+      } catch (err) {
+        console.error('Erro ao importar Excel:', err);
+        alert('Erro ao importar planilha. Verifique o console.');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  });
 </script>
+
+<!-- SheetJS para leitura do Excel -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
 </body>
 </html>
