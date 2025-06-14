@@ -206,8 +206,10 @@
     <div class="form-button-wrapper">
       <button type="submit">Adicionar / Atualizar</button>
     </div>
+      <div style="text-align:center; margin: 20px 0;">
+    <button id="btnExportarDocx" style="padding:12px 24px; font-size:16px; cursor:pointer;">Exportar para Word</button>
+  </div>
   </form>
-
 
   <div class="barra-pesquisa">
     <input type="text" id="pesquisa" placeholder="🔍 Pesquisar por nome, empresa ou número..." />
@@ -226,9 +228,12 @@
     </thead>
     <tbody></tbody>
   </table>
+
+  <!-- Botão para exportar para Word -->
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.4.4/build/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/docx@7.3.1/build/index.min.js"></script>
 
 <script>
   document.addEventListener('DOMContentLoaded', () => {
@@ -380,16 +385,76 @@
   });
 
   // Função para excluir todos os dados
-  btnExcluirTodos.addEventListener('click', async () => {
-    if (confirm('Tem certeza que deseja excluir TODOS os dados? Esta ação não pode ser desfeita.')) {
-      try {
-        await remove(armariosRef);
-        alert('Todos os dados foram excluídos.');
-      } catch (err) {
-        console.error('Erro ao excluir todos os dados:', err);
-        alert('Erro ao excluir os dados. Veja console.');
+  if (btnExcluirTodos) {
+    btnExcluirTodos.addEventListener('click', async () => {
+      if (confirm('Tem certeza que deseja excluir TODOS os dados? Esta ação não pode ser desfeita.')) {
+        try {
+          await remove(armariosRef);
+          alert('Todos os dados foram excluídos.');
+        } catch (err) {
+          console.error('Erro ao excluir todos os dados:', err);
+          alert('Erro ao excluir os dados. Veja console.');
+        }
       }
-    }
+    });
+  }
+</script>
+
+<script>
+  // Exportar tabela para Word
+  document.getElementById('btnExportarDocx').addEventListener('click', async () => {
+    const { Document, Packer, Paragraph, Table, TableRow, TableCell } = window.docx;
+
+    const tabela = document.getElementById('tabelaArmarios');
+    const rows = Array.from(tabela.querySelectorAll('tbody tr'));
+
+    const headerCells = Array.from(tabela.querySelectorAll('thead th')).map(th =>
+      new TableCell({
+        children: [new Paragraph({ text: th.innerText, bold: true })],
+        shading: { fill: "1f3b68" },
+      })
+    );
+
+    const tableRows = [
+      new TableRow({ children: headerCells }),
+    ];
+
+    rows.forEach(tr => {
+      const cells = Array.from(tr.querySelectorAll('td')).slice(0, 4); // Ignorar a coluna Ações
+      const rowCells = cells.map(td =>
+        new TableCell({
+          children: [new Paragraph(td.innerText)],
+        })
+      );
+      tableRows.push(new TableRow({ children: rowCells }));
+    });
+
+    const doc = new Document({
+      sections: [{
+        children: [
+          new Paragraph({
+            text: "Controle de Armários - Exportação",
+            heading: "Heading1",
+            spacing: { after: 300 }
+          }),
+          new Table({
+            rows: tableRows,
+            width: {
+              size: 100,
+              type: "pct"
+            }
+          })
+        ],
+      }],
+    });
+
+    const blob = await Packer.toBlob(doc);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'Controle_Armarios.docx';
+    a.click();
+    URL.revokeObjectURL(url);
   });
 </script>
 
