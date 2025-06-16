@@ -397,64 +397,91 @@
       }
     });
   }
-</script>
 
-<script>
-  // Exportar tabela para Word
+  // Exportar tabela para Word pegando os dados direto do Firebase
   document.getElementById('btnExportarDocx').addEventListener('click', async () => {
     const { Document, Packer, Paragraph, Table, TableRow, TableCell } = window.docx;
 
-    const tabela = document.getElementById('tabelaArmarios');
-    const rows = Array.from(tabela.querySelectorAll('tbody tr'));
+    try {
+      // Pega os dados direto do Firebase
+      const snapshot = await new Promise((resolve, reject) => {
+        onValue(ref(db, 'armarios'), snap => {
+          resolve(snap);
+        }, {
+          onlyOnce: true,
+          errorCallback: reject
+        });
+      });
 
-    const headerCells = Array.from(tabela.querySelectorAll('thead th')).map(th =>
-      new TableCell({
-        children: [new Paragraph({ text: th.innerText, bold: true })],
+      const dados = snapshot.val();
+      if (!dados) {
+        alert('Não há dados para exportar.');
+        return;
+      }
+
+      const arrDados = Object.values(dados);
+
+      // Cabeçalho da tabela
+      const headerCells = [
+        "Nome",
+        "Empresa",
+        "Setor",
+        "Número do Armário"
+      ].map(text => new TableCell({
+        children: [new Paragraph({ text, bold: true })],
         shading: { fill: "1f3b68" },
-      })
-    );
+      }));
 
-    const tableRows = [
-      new TableRow({ children: headerCells }),
-    ];
+      const tableRows = [
+        new TableRow({ children: headerCells }),
+      ];
 
-    rows.forEach(tr => {
-      const cells = Array.from(tr.querySelectorAll('td')).slice(0, 4); // Ignorar a coluna Ações
-      const rowCells = cells.map(td =>
-        new TableCell({
-          children: [new Paragraph(td.innerText)],
-        })
-      );
-      tableRows.push(new TableRow({ children: rowCells }));
-    });
+      // Monta linhas da tabela no docx
+      arrDados.forEach(item => {
+        const rowCells = [
+          item.nome || '',
+          item.empresa || '',
+          item.setor || '',
+          item.numero || ''
+        ].map(text => new TableCell({
+          children: [new Paragraph(text.toString())],
+        }));
+        tableRows.push(new TableRow({ children: rowCells }));
+      });
 
-    const doc = new Document({
-      sections: [{
-        children: [
-          new Paragraph({
-            text: "Controle de Armários - Exportação",
-            heading: "Heading1",
-            spacing: { after: 300 }
-          }),
-          new Table({
-            rows: tableRows,
-            width: {
-              size: 100,
-              type: "pct"
-            }
-          })
-        ],
-      }],
-    });
+      const doc = new Document({
+        sections: [{
+          children: [
+            new Paragraph({
+              text: "Controle de Armários - Exportação",
+              heading: "Heading1",
+              spacing: { after: 300 }
+            }),
+            new Table({
+              rows: tableRows,
+              width: {
+                size: 100,
+                type: "pct"
+              }
+            })
+          ],
+        }],
+      });
 
-    const blob = await Packer.toBlob(doc);
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'Controle_Armarios.docx';
-    a.click();
-    URL.revokeObjectURL(url);
+      const blob = await Packer.toBlob(doc);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'Controle_Armarios.docx';
+      a.click();
+      URL.revokeObjectURL(url);
+
+    } catch (error) {
+      console.error('Erro ao exportar:', error);
+      alert('Erro ao exportar os dados. Veja o console.');
+    }
   });
+
 </script>
 
 </body>
