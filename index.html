@@ -189,6 +189,9 @@
     <canvas id="qrCode"></canvas>
   </div>
 
+  <!-- Aqui o resumo dos colaboradores com e sem armário -->
+  <div id="resumoContagem" style="margin: 20px 0; font-size: 18px; line-height: 1.6;"></div>
+
   <table id="tabelaArmarios">
     <thead>
       <tr>
@@ -210,6 +213,20 @@
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.4.4/build/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/docx@7.3.1/build/index.min.js"></script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const qrCodeElement = document.getElementById('qrCode');
+    const urlFormulario = window.location.origin + '/formulario.html'; // ajuste conforme necessário
+    QRCode.toCanvas(qrCodeElement, urlFormulario, function (error) {
+      if (error) {
+        console.error('Erro ao gerar QR Code:', error);
+      } else {
+        console.log('QR Code gerado!');
+      }
+    });
+  });
+</script>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
@@ -265,10 +282,6 @@
       (val.setor && val.setor.toLowerCase().includes(termo)) ||
       val.numero.toString().includes(termo)
     );
-
-    // Ordenar por número do armário (crescente)
-    filtrados.sort((a, b) => parseInt(a.val.numero) - parseInt(b.val.numero));
-
     renderTabela(filtrados);
   }
 
@@ -276,11 +289,25 @@
     const dados = snapshot.val();
     if (!dados) {
       tabelaBody.innerHTML = '<tr><td colspan="5">Sem dados cadastrados.</td></tr>';
+      document.getElementById('resumoContagem').innerHTML = '';
       return;
     }
     const arr = Object.entries(dados).map(([key, val]) => ({ key, val }));
+    
+    // Atualiza a tabela com filtro
     atualizarTabelaFiltrada(arr);
     pesquisaInput.oninput = () => atualizarTabelaFiltrada(arr);
+
+    // Contagem total
+    const totalColaboradores = arr.length;
+    const comArmario = arr.filter(({ val }) => val.setor.toLowerCase() !== 'acessor').length;
+    const semArmario = arr.filter(({ val }) => val.setor.toLowerCase() === 'acessor').length;
+
+    document.getElementById('resumoContagem').innerHTML = `
+      <p><strong>Total de Colaboradores:</strong> ${totalColaboradores}</p>
+      <p><strong>Com Armário:</strong> ${comArmario}</p>
+      <p><strong>Sem Armário (Setor "Acessor"):</strong> ${semArmario}</p>
+    `;
   });
 
   form.addEventListener('submit', async (e) => {
@@ -350,6 +377,7 @@
     }
   });
 
+  // Função para excluir todos os dados
   if (btnExcluirTodos) {
     btnExcluirTodos.addEventListener('click', async () => {
       if (confirm('Tem certeza que deseja excluir TODOS os dados? Esta ação não pode ser desfeita.')) {
@@ -364,12 +392,16 @@
     });
   }
 
+  // Exportar tabela para Word pegando os dados direto do Firebase
   document.getElementById('btnExportarDocx').addEventListener('click', async () => {
     const { Document, Packer, Paragraph, Table, TableRow, TableCell, HeadingLevel, TextRun } = window.docx;
 
     try {
+      // Pega os dados direto do Firebase
       const snapshot = await new Promise((resolve, reject) => {
-        onValue(ref(db, 'armarios'), snap => resolve(snap), {
+        onValue(ref(db, 'armarios'), snap => {
+          resolve(snap);
+        }, {
           onlyOnce: true,
           errorCallback: reject
         });
@@ -383,6 +415,7 @@
 
       const arrDados = Object.values(dados);
 
+      // Cabeçalho da tabela com fundo azul e texto branco
       const headerCells = [
         "Nome",
         "Empresa",
@@ -401,6 +434,7 @@
         new TableRow({ children: headerCells }),
       ];
 
+      // Monta linhas da tabela no docx
       arrDados.forEach(item => {
         const rowCells = [
           item.nome || '',
