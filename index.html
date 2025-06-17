@@ -304,9 +304,9 @@
     const semArmario = arr.filter(({ val }) => val.setor.toLowerCase() === 'acessor').length;
 
     document.getElementById('resumoContagem').innerHTML = `
-      <p><strong>Total de Colaboradores:</strong> ${totalColaboradores}</p>
-      <p><strong>Com Armário:</strong> ${comArmario}</p>
-      <p><strong>Sem Armário (Setor "Acessor"):</strong> ${semArmario}</p>
+      <p><strong>Total de Armários:</strong> ${totalColaboradores}</p>
+      <p><strong>Armários Cadastrados:</strong> ${comArmario}</p>
+      <p><strong>Armários Livres (Setor "Acessor"):</strong> ${semArmario}</p>
     `;
   });
 
