@@ -139,97 +139,132 @@
 
   <!-- Firebase e JavaScript -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-    import { getDatabase, ref, push, get, child, set } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+  import { getDatabase, ref, push, get, child, set } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyCfBDyXi9sYCgb0Z_1ApmPk2PcwL5nhXI4",
-      authDomain: "armarios-b3c30.firebaseapp.com",
-      projectId: "armarios-b3c30",
-      storageBucket: "armarios-b3c30.appspot.com",
-      messagingSenderId: "1036955127916",
-      appId: "1:1036955127916:web:de798f7e226a9f58e60849"
-    };
+  const firebaseConfig = {
+    apiKey: "AIzaSyCfBDyXi9sYCgb0Z_1ApmPk2PcwL5nhXI4",
+    authDomain: "armarios-b3c30.firebaseapp.com",
+    projectId: "armarios-b3c30",
+    storageBucket: "armarios-b3c30.appspot.com",
+    messagingSenderId: "1036955127916",
+    appId: "1:1036955127916:web:de798f7e226a9f58e60849"
+  };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-    const armariosRef = ref(db, 'armarios');
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const armariosRef = ref(db, 'armarios');
 
-    // Envio individual com verificação
-    const form = document.getElementById('formArmario');
-    form.addEventListener('submit', async e => {
-      e.preventDefault();
+  const form = document.getElementById('formArmario');
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
 
-      const nome = form.nome.value.trim();
-      const empresa = form.empresa.value.trim();
-      const setor = form.setor.value.trim();
-      const numero = form.numero.value.trim();
+    const nome = form.nome.value.trim();
+    const empresa = form.empresa.value.trim();
+    const setor = form.setor.value.trim();
+    const numero = form.numero.value.trim();
 
-      if (!nome || !empresa || !setor || !numero) {
-        alert('Por favor, preencha todos os campos!');
-        return;
-      }
+    if (!nome || !empresa || !setor || !numero) {
+      alert('Por favor, preencha todos os campos!');
+      return;
+    }
 
-      try {
-        const snapshot = await get(armariosRef);
-        let chaveExistente = null;
+    try {
+      const snapshot = await get(armariosRef);
+      let chaveExistente = null;
+      let dataUltimaEdicao = null;
 
-        snapshot.forEach(childSnapshot => {
-          const data = childSnapshot.val();
-          if (data.numero === numero) {
-            chaveExistente = childSnapshot.key;
+      snapshot.forEach(childSnapshot => {
+        const data = childSnapshot.val();
+        if (data.numero === numero) {
+          chaveExistente = childSnapshot.key;
+          dataUltimaEdicao = data.dataEdicao;
+        }
+      });
+
+      const agora = new Date();
+      const agoraTimestamp = agora.getTime();
+
+      if (chaveExistente) {
+        // Se tem data de última edição, verifica se já se passaram 7 dias
+        if (dataUltimaEdicao) {
+          const diffMs = agoraTimestamp - new Date(dataUltimaEdicao).getTime();
+          const diasPassados = diffMs / (1000 * 60 * 60 * 24);
+
+          if (diasPassados < 7) {
+            const diasRestantes = Math.ceil(7 - diasPassados);
+            alert(`Esse armário só poderá ser alterado novamente em ${diasRestantes} dia(s).`);
+            return;
           }
+        }
+
+        await set(ref(db, `armarios/${chaveExistente}`), {
+          nome,
+          empresa,
+          setor,
+          numero,
+          dataEdicao: agora.toISOString()
         });
+        alert(`Armário nº ${numero} atualizado com sucesso!`);
 
-        if (chaveExistente) {
-          await set(ref(db, `armarios/${chaveExistente}`), { nome, empresa, setor, numero });
-          alert(`Armário nº ${numero} atualizado com sucesso!`);
-        } else {
-          await push(armariosRef, { nome, empresa, setor, numero });
-          alert(`Armário nº ${numero} cadastrado com sucesso!`);
-        }
-
-        form.reset();
-        form.nome.focus();
-      } catch (err) {
-        console.error('Erro ao processar dados:', err);
-        alert('Erro ao enviar dados. Tente novamente.');
-      }
-    });
-
-    // Envio múltiplo (sem lógica de atualização por número)
-    document.getElementById('adicionarMultiplosBtn').addEventListener('click', async () => {
-      const texto = document.getElementById('dadosMultiplos').value.trim();
-      if (!texto) {
-        alert('Cole os dados para adicionar.');
-        return;
+      } else {
+        await push(armariosRef, {
+          nome,
+          empresa,
+          setor,
+          numero,
+          dataEdicao: agora.toISOString()
+        });
+        alert(`Armário nº ${numero} cadastrado com sucesso!`);
       }
 
-      const linhas = texto.split('\n').filter(l => l.trim() !== '');
-      let sucesso = 0;
-      let falhas = 0;
-      let contadorNumero = 1;
+      form.reset();
+      form.nome.focus();
+    } catch (err) {
+      console.error('Erro ao processar dados:', err);
+      alert('Erro ao enviar dados. Tente novamente.');
+    }
+  });
 
-      for (const linha of linhas) {
-        const campos = linha.split('\t').map(c => c.trim());
-        if (campos.length < 3) { falhas++; continue; }
+  // Lógica do botão múltiplo continua igual (sem restrições de 7 dias)
+  document.getElementById('adicionarMultiplosBtn').addEventListener('click', async () => {
+    const texto = document.getElementById('dadosMultiplos').value.trim();
+    if (!texto) {
+      alert('Cole os dados para adicionar.');
+      return;
+    }
 
-        const [nome, empresa, setor] = campos;
-        if (!nome || !empresa || !setor) { falhas++; continue; }
+    const linhas = texto.split('\n').filter(l => l.trim() !== '');
+    let sucesso = 0;
+    let falhas = 0;
+    let contadorNumero = 1;
 
-        const numero = String(contadorNumero++);
-        try {
-          await push(armariosRef, { nome, empresa, setor, numero });
-          sucesso++;
-        } catch {
-          falhas++;
-        }
+    for (const linha of linhas) {
+      const campos = linha.split('\t').map(c => c.trim());
+      if (campos.length < 3) { falhas++; continue; }
+
+      const [nome, empresa, setor] = campos;
+      if (!nome || !empresa || !setor) { falhas++; continue; }
+
+      const numero = String(contadorNumero++);
+      try {
+        await push(armariosRef, {
+          nome,
+          empresa,
+          setor,
+          numero,
+          dataEdicao: new Date().toISOString()
+        });
+        sucesso++;
+      } catch {
+        falhas++;
       }
+    }
 
-      alert(`Importação finalizada.\nSucesso: ${sucesso}\nFalhas: ${falhas}`);
-      if (sucesso > 0) document.getElementById('dadosMultiplos').value = '';
-    });
-  </script>
+    alert(`Importação finalizada.\nSucesso: ${sucesso}\nFalhas: ${falhas}`);
+    if (sucesso > 0) document.getElementById('dadosMultiplos').value = '';
+  });
+</script>
 
 </body>
 </html>
