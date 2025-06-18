@@ -282,6 +282,10 @@
       (val.setor && val.setor.toLowerCase().includes(termo)) ||
       val.numero.toString().includes(termo)
     );
+
+    // Ordenação crescente por número do armário
+    filtrados.sort((a, b) => Number(a.val.numero) - Number(b.val.numero));
+    
     renderTabela(filtrados);
   }
 
@@ -292,13 +296,15 @@
       document.getElementById('resumoContagem').innerHTML = '';
       return;
     }
-    const arr = Object.entries(dados).map(([key, val]) => ({ key, val }));
-    
-    // Atualiza a tabela com filtro
+
+    let arr = Object.entries(dados).map(([key, val]) => ({ key, val }));
+
+    // Ordena em ordem crescente por número do armário
+    arr.sort((a, b) => Number(a.val.numero) - Number(b.val.numero));
+
     atualizarTabelaFiltrada(arr);
     pesquisaInput.oninput = () => atualizarTabelaFiltrada(arr);
 
-    // Contagem total
     const totalColaboradores = arr.length;
     const comArmario = arr.filter(({ val }) => val.setor.toLowerCase() !== 'acessor').length;
     const semArmario = arr.filter(({ val }) => val.setor.toLowerCase() === 'acessor').length;
@@ -377,7 +383,6 @@
     }
   });
 
-  // Função para excluir todos os dados
   if (btnExcluirTodos) {
     btnExcluirTodos.addEventListener('click', async () => {
       if (confirm('Tem certeza que deseja excluir TODOS os dados? Esta ação não pode ser desfeita.')) {
@@ -391,97 +396,8 @@
       }
     });
   }
-
-  // Exportar tabela para Word pegando os dados direto do Firebase
-  document.getElementById('btnExportarDocx').addEventListener('click', async () => {
-    const { Document, Packer, Paragraph, Table, TableRow, TableCell, HeadingLevel, TextRun } = window.docx;
-
-    try {
-      // Pega os dados direto do Firebase
-      const snapshot = await new Promise((resolve, reject) => {
-        onValue(ref(db, 'armarios'), snap => {
-          resolve(snap);
-        }, {
-          onlyOnce: true,
-          errorCallback: reject
-        });
-      });
-
-      const dados = snapshot.val();
-      if (!dados) {
-        alert('Não há dados para exportar.');
-        return;
-      }
-
-      const arrDados = Object.values(dados);
-
-      // Cabeçalho da tabela com fundo azul e texto branco
-      const headerCells = [
-        "Nome",
-        "Empresa",
-        "Setor",
-        "Número do Armário"
-      ].map(text => new TableCell({
-        children: [new Paragraph({
-          children: [new TextRun({ text, bold: true, color: "FFFFFF" })],
-          spacing: { after: 200 }
-        })],
-        shading: { fill: "1f3b68" },
-        margins: { top: 100, bottom: 100 }
-      }));
-
-      const tableRows = [
-        new TableRow({ children: headerCells }),
-      ];
-
-      // Monta linhas da tabela no docx
-      arrDados.forEach(item => {
-        const rowCells = [
-          item.nome || '',
-          item.empresa || '',
-          item.setor || '',
-          item.numero || ''
-        ].map(text => new TableCell({
-          children: [new Paragraph(text.toString())],
-          margins: { top: 100, bottom: 100 }
-        }));
-        tableRows.push(new TableRow({ children: rowCells }));
-      });
-
-      const doc = new Document({
-        sections: [{
-          children: [
-            new Paragraph({
-              text: "Controle de Armários - Exportação",
-              heading: HeadingLevel.HEADING_1,
-              spacing: { after: 300 }
-            }),
-            new Table({
-              rows: tableRows,
-              width: {
-                size: 100,
-                type: "pct"
-              }
-            })
-          ],
-        }],
-      });
-
-      const blob = await Packer.toBlob(doc);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'Controle_Armarios.docx';
-      a.click();
-      URL.revokeObjectURL(url);
-
-    } catch (error) {
-      console.error('Erro ao exportar:', error);
-      alert('Erro ao exportar os dados. Veja o console.');
-    }
-  });
-
 </script>
+
 
 </body>
 </html>
