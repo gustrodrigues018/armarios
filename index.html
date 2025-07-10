@@ -232,6 +232,12 @@
     <tbody></tbody>
   </table>
 
+  <div style="text-align:center; margin: 10px 0;">
+    <button id="btnExportarCSV" style="padding:12px 24px; font-size:16px; cursor:pointer; background-color: #28a745; color: white; border: none; border-radius: 8px;">
+      Exportar para CSV
+    </button>
+  </div>
+
   <div style="text-align:center; margin: 20px 0;">
     <button id="btnExportarDocx" style="padding:12px 24px; font-size:16px; cursor:pointer;">Exportar para Word</button>
   </div>
@@ -425,6 +431,33 @@
   }
 </script>
 
+<script>
+  // NOVO: Exportar CSV
+  document.getElementById("btnExportarCSV").addEventListener("click", () => {
+    const linhas = [["Nome", "Empresa", "Setor", "Número do Armário"]];
+
+    document.querySelectorAll("#tabelaArmarios tbody tr").forEach(tr => {
+      const tds = tr.querySelectorAll("td");
+      if (tds.length >= 4) {
+        const nome = tds[0].innerText.trim();
+        const empresa = tds[1].innerText.trim();
+        const setor = tds[2].innerText.trim();
+        const numero = tds[3].innerText.trim();
+        linhas.push([nome, empresa, setor, numero]);
+      }
+    });
+
+    let csv = linhas.map(l => l.map(item => `"${item.replace(/"/g, '""')}"`).join(",")).join("\n");
+    let blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    let link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "controle_armarios.csv";
+    link.style.display = "none";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  });
+</script>
 
 </body>
 </html>
