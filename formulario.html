@@ -133,7 +133,7 @@
   <!-- Formulário múltiplo -->
   <form id="formMultiplo" autocomplete="off" novalidate style="max-width: 420px; width: 100%; margin: 0 auto;">
     <label for="dadosMultiplos">Cole os dados para adicionar múltiplos (copie da planilha):</label>
-    <textarea id="dadosMultiplos" rows="8" placeholder="nome[tab]empresa[tab]setor&#10;Exemplo: João Silva\tEmpresa X\tFinanceiro"></textarea>
+    <textarea id="dadosMultiplos" rows="8" placeholder="nome[tab]empresa[tab]setor[tab]número&#10;Exemplo: João Silva\tEmpresa X\tFinanceiro\t272"></textarea>
     <button type="button" id="adicionarMultiplosBtn">Adicionar Todos</button>
   </form>
 
@@ -186,7 +186,6 @@
       const agoraTimestamp = agora.getTime();
 
       if (chaveExistente) {
-        // Se tem data de última edição, verifica se já se passaram 7 dias
         if (dataUltimaEdicao) {
           const diffMs = agoraTimestamp - new Date(dataUltimaEdicao).getTime();
           const diasPassados = diffMs / (1000 * 60 * 60 * 24);
@@ -228,7 +227,7 @@ Se precisar de ajuda ou detectar algum erro, entre em contato com o Gustavo - RH
     }
   });
 
-  // Lógica do botão múltiplo continua igual (sem restrições de 7 dias)
+  // Formulário múltiplo corrigido para aceitar número diretamente da colagem
   document.getElementById('adicionarMultiplosBtn').addEventListener('click', async () => {
     const texto = document.getElementById('dadosMultiplos').value.trim();
     if (!texto) {
@@ -239,16 +238,14 @@ Se precisar de ajuda ou detectar algum erro, entre em contato com o Gustavo - RH
     const linhas = texto.split('\n').filter(l => l.trim() !== '');
     let sucesso = 0;
     let falhas = 0;
-    let contadorNumero = 1;
 
     for (const linha of linhas) {
       const campos = linha.split('\t').map(c => c.trim());
-      if (campos.length < 3) { falhas++; continue; }
+      if (campos.length < 4) { falhas++; continue; }
 
-      const [nome, empresa, setor] = campos;
-      if (!nome || !empresa || !setor) { falhas++; continue; }
+      const [nome, empresa, setor, numero] = campos;
+      if (!nome || !empresa || !setor || !numero) { falhas++; continue; }
 
-      const numero = String(contadorNumero++);
       try {
         await push(armariosRef, {
           nome,
