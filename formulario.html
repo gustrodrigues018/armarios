@@ -190,11 +190,11 @@
           const diffMs = agoraTimestamp - new Date(dataUltimaEdicao).getTime();
           const diasPassados = diffMs / (1000 * 60 * 60 * 24);
 
-          if (diasPassados < 30) {
-            const diasRestantes = Math.ceil(30 - diasPassados);
+          if (diasPassados < 10) {
+            const diasRestantes = Math.ceil(10 - diasPassados);
             alert(`🚨 Atenção: Este armário já foi cadastrado anteriormente, por você ou por outro colaborador. 
 Por segurança e controle, ele só poderá ser alterado novamente daqui a ${diasRestantes} dia(s). 
-Se precisar de ajuda ou detectar algum erro, entre em contato com o Gustavo - RH.`);
+Se precisar de ajuda ou detectar algum erro, entre em contato com Gustavo - Marcela - do RH.`);
             return;
           }
         }
